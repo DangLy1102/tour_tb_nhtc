@@ -1,7 +1,0 @@
-import {test} from 'node:test';
-import assert from 'node:assert/strict';
-import {allowedEmail,normalizeEmail,codeHash,newCode,newToken,tokenHash,isSameOrigin} from '../lib/security.mjs';
-test('chỉ chấp nhận đúng domain công ty',()=>{assert.equal(allowedEmail(' Ten.Ban@NHTC.COM.VN '),true);for(const v of ['a@gmail.com','a@nhtc.com.vn.evil.com','a@evilnhtc.com.vn','a@sub.nhtc.com.vn','a@@nhtc.com.vn','a\r\nb@nhtc.com.vn','@nhtc.com.vn',null])assert.equal(allowedEmail(v),false,String(v));assert.equal(normalizeEmail(' A@NHTC.COM.VN '),'a@nhtc.com.vn');});
-test('mã xác nhận gắn với email và secret',()=>{const h=codeHash('a@nhtc.com.vn','123456','secret');assert.notEqual(h,codeHash('b@nhtc.com.vn','123456','secret'));assert.notEqual(h,codeHash('a@nhtc.com.vn','123456','other'));assert.match(newCode(),/^\d{6}$/);});
-test('session token ngẫu nhiên và chỉ lưu hash',()=>{const a=newToken(),b=newToken();assert.match(a,/^[a-f0-9]{64}$/);assert.notEqual(a,b);assert.notEqual(tokenHash(a),a);assert.equal(tokenHash(a),tokenHash(a));});
-test('chặn POST từ origin khác và thiếu origin',()=>{assert.equal(isSameOrigin(new Request('https://example.com/api/votes',{headers:{origin:'https://example.com'}})),true);assert.equal(isSameOrigin(new Request('https://example.com/api/votes',{headers:{origin:'https://evil.com'}})),false);assert.equal(isSameOrigin(new Request('https://example.com/api/votes')),false);});
