@@ -6,7 +6,7 @@ const domain='@nhtc.com.vn';
 export const {handlers,signIn,signOut,auth}=NextAuth({
  secret:process.env.AUTH_SECRET,
  trustHost:true,
- pages:{error:'/login',signIn:'/login'},
+ pages:{error:'/login'},
  providers:[Google({clientId:process.env.AUTH_GOOGLE_ID,clientSecret:process.env.AUTH_GOOGLE_SECRET,authorization:{params:{hd:'nhtc.com.vn',prompt:'select_account'}}})],
  callbacks:{
   signIn({profile}){
