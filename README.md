@@ -16,14 +16,14 @@ Mail không phải `@nhtc.com.vn` sẽ bị từ chối dù Google xác thực t
 
 ## Phiếu cả nhóm trên Vercel
 
-Local: phiếu ghi `data/votes.json`. Vercel filesystem không giữ được — vào project Vercel → **Storage → Create KV**, rồi Redeploy. Biến `KV_REST_API_URL` / `KV_REST_API_TOKEN` được gắn sẵn.
+Local: phiếu ghi `data/votes.json`. Vercel không giữ file — vào project → **Storage → Create Database → Upstash Redis**, rồi Redeploy. Biến `KV_REST_API_URL` / `KV_REST_API_TOKEN` (hoặc `UPSTASH_REDIS_REST_*`) được gắn sẵn.
 
 ## Đưa lên Vercel
 
 1. Push repo `https://github.com/DangLy1102/tour_tb_nhtc.git`.
 2. Vercel → Import, Node 22.x.
 3. Environment Variables: `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_TRUST_HOST=true`.
-4. (Khuyến nghị) Storage → KV để tổng phiếu cả nhóm.
+4. Storage → Create Database → Upstash Redis (bắt buộc nếu muốn bình chọn trên Vercel).
 
 ## Chạy trên máy
 

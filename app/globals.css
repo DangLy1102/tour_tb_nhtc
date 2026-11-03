@@ -26,3 +26,4 @@ header{position:sticky;top:0;z-index:12;backdrop-filter:blur(16px);background:#f
 .table-wrap th b{display:block;padding-right:18px}
 .rank img{width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0}
 @media(max-width:760px){.filterbar{top:72px}.card-image{height:190px}.modal-photo{height:200px}.modal-thumbs,.modal .eyebrow,.modal h2,.modalprice,.modal .pills,.modal .muted,.modal .tabs,.modal .info,.modal .timeline,.modal .detail-text,.modalfoot{padding-left:18px;padding-right:18px}.hero-dots{right:16px}}
+.error{background:#fff6e8;border:1px solid #ead8b0;padding:12px 14px;border-radius:8px;color:#6a4b12}

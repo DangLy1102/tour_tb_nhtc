@@ -5,9 +5,13 @@ const KEY='nhtc_tour_votes';
 const file=path.join(process.cwd(),'data','votes.json');
 export type Votes=Record<string,string>;
 
+export class VoteStoreError extends Error{
+ constructor(message:string){super(message);this.name='VoteStoreError'}
+}
+
 function kv(){
- const url=process.env.KV_REST_API_URL;
- const token=process.env.KV_REST_API_TOKEN;
+ const url=process.env.KV_REST_API_URL||process.env.UPSTASH_REDIS_REST_URL;
+ const token=process.env.KV_REST_API_TOKEN||process.env.UPSTASH_REDIS_REST_TOKEN;
  return url&&token?{url,token}:null;
 }
 
@@ -32,10 +36,11 @@ async function save(votes:Votes){
  const body=JSON.stringify(votes);
  const k=kv();
  if(k){
-  // ponytail: read-modify-write is enough for a few dozen staff votes
-  await fetch(`${k.url}/set/${KEY}`,{method:'POST',headers:{Authorization:`Bearer ${k.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await fetch(`${k.url}/set/${KEY}`,{method:'POST',headers:{Authorization:`Bearer ${k.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok)throw new VoteStoreError('Không ghi được phiếu lên KV.');
   return;
  }
+ if(process.env.VERCEL)throw new VoteStoreError('Vercel không giữ file. Mở project → Storage → Create Database → Upstash Redis, rồi Redeploy.');
  await mkdir(path.dirname(file),{recursive:true});
  await writeFile(file,body);
 }

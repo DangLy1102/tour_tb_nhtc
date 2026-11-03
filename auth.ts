@@ -12,6 +12,14 @@ export const {handlers,signIn,signOut,auth}=NextAuth({
   signIn({profile}){
    const email=String(profile?.email||'').toLowerCase();
    return Boolean(profile?.email_verified&&email.endsWith(domain));
+  },
+  jwt({token,profile}){
+   if(profile?.email)token.email=String(profile.email).toLowerCase();
+   return token;
+  },
+  session({session,token}){
+   if(session.user)session.user.email=String(token.email||'');
+   return session;
   }
  }
 });

@@ -1,6 +1,9 @@
 import {auth} from '@/auth';
 import {tours} from '@/app/data';
-import {setVote,tally} from '@/lib/votes';
+import {setVote,tally,VoteStoreError} from '@/lib/votes';
+
+export const dynamic='force-dynamic';
+export const revalidate=0;
 
 function emailOf(session:{user?:{email?:string|null}}|null){
  const email=session?.user?.email?.toLowerCase()||'';
@@ -23,6 +26,11 @@ export async function POST(req:Request){
   const t=tours.find(x=>x.id===id);
   if(!t||t.expired)return Response.json({error:'Tour không hợp lệ'},{status:400});
  }
- const {counts,total,votes}=await setVote(email,id);
- return Response.json({counts,total,mine:votes[email]??null,email});
+ try{
+  const {counts,total,votes}=await setVote(email,id);
+  return Response.json({counts,total,mine:votes[email]??null,email});
+ }catch(e){
+  const msg=e instanceof VoteStoreError?e.message:'Không lưu được phiếu. Thử lại sau.';
+  return Response.json({error:msg},{status:503});
+ }
 }
