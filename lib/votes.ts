@@ -9,35 +9,52 @@ export class VoteStoreError extends Error{
  constructor(message:string){super(message);this.name='VoteStoreError'}
 }
 
+function clean(v?:string){
+ return v?.trim().replace(/^"|"$/g,'')||'';
+}
+
 function kv(){
- const url=process.env.KV_REST_API_URL||process.env.UPSTASH_REDIS_REST_URL;
- const token=process.env.KV_REST_API_TOKEN||process.env.UPSTASH_REDIS_REST_TOKEN;
- return url&&token?{url,token}:null;
+ const url=clean(process.env.KV_REST_API_URL||process.env.UPSTASH_REDIS_REST_URL);
+ const token=clean(process.env.KV_REST_API_TOKEN||process.env.UPSTASH_REDIS_REST_TOKEN);
+ return url&&token?{url:url.replace(/\/$/,''),token}:null;
 }
 
 function parse(v:unknown):Votes{
- if(!v)return {};
- if(typeof v==='string')try{return JSON.parse(v)}catch{return {}}
- if(typeof v==='object')return v as Votes;
+ let cur=v;
+ for(let i=0;i<4;i++){
+  if(typeof cur==='string'){
+   try{cur=JSON.parse(cur)}catch{return {}}
+   continue;
+  }
+  if(cur&&typeof cur==='object'&&!Array.isArray(cur))return cur as Votes;
+  return {};
+ }
  return {};
 }
 
-export async function load():Promise<Votes>{
+async function redis(cmd:unknown[]){
  const k=kv();
- if(k){
-  const r=await fetch(`${k.url}/get/${KEY}`,{headers:{Authorization:`Bearer ${k.token}`},cache:'no-store'});
-  const j=await r.json() as {result:unknown};
-  return parse(j.result);
- }
+ if(!k)throw new VoteStoreError('Chưa gắn Redis. Redeploy sau khi Connect to project.');
+ const r=await fetch(k.url,{
+  method:'POST',
+  headers:{Authorization:`Bearer ${k.token}`,'Content-Type':'application/json'},
+  body:JSON.stringify(cmd),
+  cache:'no-store'
+ });
+ const j=await r.json().catch(()=>({})) as {result?:unknown,error?:string};
+ if(!r.ok||j.error)throw new VoteStoreError(j.error||`Redis ${r.status}`);
+ return j.result;
+}
+
+export async function load():Promise<Votes>{
+ if(kv())return parse(await redis(['GET',KEY]));
  try{return parse(await readFile(file,'utf8'))}catch{return {}}
 }
 
 async function save(votes:Votes){
  const body=JSON.stringify(votes);
- const k=kv();
- if(k){
-  const r=await fetch(`${k.url}/set/${KEY}`,{method:'POST',headers:{Authorization:`Bearer ${k.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!r.ok)throw new VoteStoreError('Không ghi được phiếu lên KV.');
+ if(kv()){
+  await redis(['SET',KEY,body]);
   return;
  }
  if(process.env.VERCEL)throw new VoteStoreError('Vercel không giữ file. Mở project → Storage → Create Database → Upstash Redis, rồi Redeploy.');
@@ -48,7 +65,9 @@ async function save(votes:Votes){
 export async function tally(){
  const votes=await load();
  const counts:Record<string,number>={};
- for(const id of Object.values(votes))counts[id]=(counts[id]||0)+1;
+ for(const id of Object.values(votes)){
+  if(typeof id==='string'&&id.length>1)counts[id]=(counts[id]||0)+1;
+ }
  return {votes,counts,total:Object.keys(votes).length};
 }
 
