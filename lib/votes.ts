@@ -62,13 +62,22 @@ async function save(votes:Votes){
  await writeFile(file,body);
 }
 
+export function who(votes:Votes){
+ const m:Record<string,string[]>={};
+ for(const [email,id] of Object.entries(votes)){
+  if(typeof id==='string'&&id.length>1)(m[id]||(m[id]=[])).push(email);
+ }
+ for(const id of Object.keys(m))m[id].sort();
+ return m;
+}
+
 export async function tally(){
  const votes=await load();
  const counts:Record<string,number>={};
  for(const id of Object.values(votes)){
   if(typeof id==='string'&&id.length>1)counts[id]=(counts[id]||0)+1;
  }
- return {votes,counts,total:Object.keys(votes).length};
+ return {votes,counts,total:Object.keys(votes).length,who:who(votes)};
 }
 
 export async function setVote(email:string,id:string|null){

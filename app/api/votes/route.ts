@@ -2,6 +2,10 @@ import {auth} from '@/auth';
 import {tours} from '@/app/data';
 import {setVote,tally,VoteStoreError} from '@/lib/votes';
 
+function pack(email:string|null,data:Awaited<ReturnType<typeof tally>>){
+ return {counts:data.counts,total:data.total,mine:email?data.votes[email]??null:null,email,who:email?data.who:{}};
+}
+
 export const dynamic='force-dynamic';
 export const revalidate=0;
 
@@ -13,8 +17,7 @@ function emailOf(session:{user?:{email?:string|null}}|null){
 export async function GET(){
  const session=await auth();
  const email=emailOf(session);
- const {counts,total,votes}=await tally();
- return Response.json({counts,total,mine:email?votes[email]??null:null,email});
+ return Response.json(pack(email,await tally()));
 }
 
 export async function POST(req:Request){
@@ -27,8 +30,7 @@ export async function POST(req:Request){
   if(!t||t.expired)return Response.json({error:'Tour không hợp lệ'},{status:400});
  }
  try{
-  const {counts,total,votes}=await setVote(email,id);
-  return Response.json({counts,total,mine:votes[email]??null,email});
+  return Response.json(pack(email,await setVote(email,id)));
  }catch(e){
   const msg=e instanceof VoteStoreError?e.message:'Không lưu được phiếu. Thử lại sau.';
   return Response.json({error:msg},{status:503});
